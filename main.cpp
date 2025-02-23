@@ -2,6 +2,7 @@
 
 //Apply a subtraction on the register value
 int subtract(uint16_t operand){
+
     if(register_val < operand){
         return 0;
     }
@@ -13,8 +14,8 @@ int subtract(uint16_t operand){
 
 //returns the saturated version of the value
 int saturate_int(int value){
-    int saturated = std::min(std::max(value,0),65535); // saturates the int
-    return saturated; // cast to the right type(avoids warnings and unexpected behaviour)
+    int saturated = std::min(std::max(value,0),65535); 
+    return saturated;
 }
 
 
@@ -39,7 +40,7 @@ uint16_t parse_operand(const std::string& instr){
 }
 
 
-// Exécute le programme dans le fichier texte 'program_path'
+// Executes the program int the file named 'program_path'
 void exec(const std::string& program_path){
     std::fstream file;
     file.open(program_path); //open file in reading mode
