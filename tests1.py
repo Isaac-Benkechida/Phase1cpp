@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 #
-# Fichier de tests pour la phase 1 du projet.
+# Fichier de tests pour la phase 2 du projet.
 #
 # Vous pouvez tester votre projet avec la commande :
 #
-#   python3 tests1.py chemin/vers/votre/executable
+#   python3 tests2.py chemin/vers/votre/executable
 
 import os
 import subprocess
@@ -15,69 +15,129 @@ import sys
 PROGRAM_FILE = "program.txt"
 
 PROGRAMS = [
-"""
-SET 5
-PRINT
-ADD 10
-PRINT
-SUB 3
-PRINT
+"""SET a 5
+ADD a 6
+PRINT a
+SUB a 4
+IFNZ a
+PRINT a
+SUB a 10
+IFNZ a
+PRINT a
 """,
 
-"""
-PRINT
-ADD 5
-PRINT
+"""SET a 0
+IFNZ a
+PRINT a
+SET a 5
+IFNZ a
+PRINT a
 """,
 
-"""
-SET 5
-PRINT
-SUB 8
-PRINT
+"""SET c 50000
+PRINT c
+ADD c 50000
+PRINT c
 """,
 
-"""
-SET 50000
-PRINT
-ADD 50000
-PRINT
+"""PRINT a
+PRINT b
+PRINT c
+PRINT d
 """,
 
-"""
-SET 5
-ADD 6
-PRINT
-SUB 4
-IFNZ
-PRINT
-SUB 10
-IFNZ
-PRINT
+"""SET a 120
+ADD a 30
+PRINT a
+SET b 130
+PRINT b
+SUB a b
+PRINT a
+""",
+
+"""SET a 5
+PUSH a
+ADD a a
+PUSH a
+SUB a 20
+PUSH a
+POP d
+PRINT d
+POP b
+PRINT b
+POP c
+PRINT c
+""",
+
+"""SET a 5
+SET b 8
+STORE 100 a
+STORE 102 b
+LOAD 100 d
+PRINT d
+LOAD 102 c
+PRINT c
+""",
+
+"""SET a 150
+SET b 130
+PUSH a
+ADD a b
+PUSH a
+STORE 100 a
+STORE 101 b
+POP c
+PRINT c
+POP d
+PRINT d
+LOAD 100 b
+IFNZ b
+PRINT b
+LOAD 101 a
+PRINT a
+SUB b b
+IFNZ b
+PRINT b
 """,
 ]
 
 OUTPUTS = [
   [
-    "5",
-    "15",
-    "12",
+    ["11"],
+    ["7"],
   ],
   [
-    "0",
-    "5",
+    ["5"],
   ],
   [
-    "5",
-    "0",
+    ["50000"],
+    ["65535"],
   ],
   [
-    "50000",
-    "65535",
+    ["0"],
+    ["0"],
+    ["0"],
+    ["0"],
   ],
   [
-    "11",
-    "7",
+    ["150"],
+    ["130"],
+    ["20"],
+  ],
+  [
+    ["0"],
+    ["10"],
+    ["5"],
+  ],
+  [
+    ["5"],
+    ["8"],
+  ],
+  [
+    ["280", "280"],
+    ["150", "150"],
+    ["256", "33304"],
+    ["130", "130"],
   ],
 ]
 
@@ -102,8 +162,8 @@ def check_program_output(n: int):
     output.append('')
 
   for output_line, expected_line in zip(output, OUTPUTS[n], strict=True):
-    if output_line != expected_line:
-      print(f"### FAIL ###   Expected '{expected_line}' but output is '{output_line}'", file=sys.stderr)
+    if output_line not in expected_line:
+      print(f"### FAIL ###   Expected {expected_line} but output is '{output_line}'", file=sys.stderr)
       print(program.stderr, file=sys.stderr)
       return False
 
