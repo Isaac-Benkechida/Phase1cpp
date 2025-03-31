@@ -24,39 +24,41 @@ uint16_t parse_operand(const std::string& instr){
     std::stringstream ss(instr);
     ss >> opcode;
     ss >> operand;
-    operand = value_in_register(operand);
+    
     return operand;
 }
 
 
-// determine what value the operand needs to store
-uint16_t value_in_register(auto operand){
-    uint16_t value;
-    if (operand == "a"){
-        value = a;
-    }else if(operand == "b"){
-        value = b;
-    }else if(operand == "c"){
-        value = c;
-    }else if(operand == "d"){
-        value = d;
-    }else{
-        return operand;
+//extracts the operand that follows an instruction
+uint16_t parse_value(const std::string& instr, std::map<std::string,int>& registers){
+    std::string opcode;
+    uint16_t operand;
+    std::string value;
+    std::stringstream ss(instr);
+    ss >> opcode;
+    ss >> operand;
+    ss >> value;
+    if (registers.find(value) != registers.end()) {
+        // It's a register name, return its value
+        return registers[value];
     }
-    return value;
+    else{
+        //convert it to uint16_t
+        return std::stoi(value);
+    }
 }
+
+
 
 
 // Executes le program in the file named 'program_path'
 void exec(const std::string& program_path){
 
-    int a = 0;
-    int b = 0;
-    int c = 0;
-    int d = 0;
-
-    std::vector<registers> registers;
-    registers.emplace_back(a,b,c,d);
+    std::map<std::string,int> registers;
+    registers["a"] = 0;
+    registers["b"] = 0;
+    registers["c"] = 0;
+    registers["d"] = 0;
     
     std::fstream file;
     file.open(program_path); //open file in reading mode
@@ -65,16 +67,19 @@ void exec(const std::string& program_path){
         exit(EXIT_FAILURE);
     }
 
-    std::string line;
     std::string opcode;
     uint16_t operand;
+    uint16_t value;
+
     bool ignore = false; //for IFNZ operator
+    std::string line;
 
     while(getline(file, line)){
 
         if(!ignore){
 
             opcode = parse_opcode(line);
+            operand = parse_operand(line);
             //print
             if(opcode == "PRINT"){
                 std::cout << register_val<<std::endl;
@@ -84,8 +89,9 @@ void exec(const std::string& program_path){
                 ignore = true;
             }
 
-            else{
-                operand = parse_operand(line);
+            else {
+                value = parse_value(line,registers);
+
                 //assignement
                 if(opcode == "SET"){
                     register_val = saturate_int(operand);

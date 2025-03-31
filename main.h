@@ -4,16 +4,10 @@
 #include <string>
 #include <fstream> //opening files
 #include <sstream> // for string parsing
-#include <vector>
+#include <map> // to easily manipulate registers
+#include <string>
+#include <typeinfo>
 int register_val;
-
-
-struct registers {
-    int a = 0;
-    int b = 0;
-    int c = 0;
-    int d = 0;
-};
 
 
 int saturate_int(int value);
