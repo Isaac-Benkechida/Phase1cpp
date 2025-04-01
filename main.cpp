@@ -48,17 +48,20 @@ uint16_t parse_value(const std::string& instr, std::map<std::string,int>& regist
     }
 }
 
-
-
-
-// Executes le program in the file named 'program_path'
-void exec(const std::string& program_path){
-
+std::map<std::string,int> build_map(){
     std::map<std::string,int> registers;
     registers["a"] = 0;
     registers["b"] = 0;
     registers["c"] = 0;
     registers["d"] = 0;
+    return registers;
+}
+
+
+// Executes le program in the file named 'program_path'
+void exec(const std::string& program_path){
+    //initialise a map with the 4 registers
+    std::map<std::string,int> registers = build_map();
     
     std::fstream file;
     file.open(program_path); //open file in reading mode
@@ -80,6 +83,7 @@ void exec(const std::string& program_path){
 
             opcode = parse_opcode(line);
             operand = parse_operand(line);
+
             //print
             if(opcode == "PRINT"){
                 std::cout << register_val<<std::endl;
