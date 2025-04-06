@@ -1,4 +1,5 @@
-#include "main.h"
+#include "main.hpp"
+#include "memory.hpp"
 
 
 //returns the saturated version of the value
@@ -6,6 +7,11 @@ int saturate_int(int value){
     int upper = 65535; 
     int saturated = std::min(std::max(value,0),upper); // saturates the int
     return saturated; // cast to the right type(avoids warnings and unexpected behaviour)
+}
+
+
+bool is_register_name(std::string third_parameter,std::map<std::string,int>& registers){
+    registers.find(third_parameter) != registers.end();
 }
 
 
@@ -29,6 +35,7 @@ std::string parse_operand(const std::string& instr){
 }
 
 
+
 //extracts the operand that follows an instruction
 uint16_t parse_value(const std::string& instr, std::map<std::string,int>& registers){
     std::string third_parameter;
@@ -39,7 +46,7 @@ uint16_t parse_value(const std::string& instr, std::map<std::string,int>& regist
     ss >> third_parameter;
     ss >> third_parameter; //access third parameter of the line
 
-    if (registers.find(third_parameter) != registers.end()) {
+    if (is_register_name(third_parameter,registers)) {
         // It's a register name, return its value
         return registers[third_parameter];
     }
@@ -81,7 +88,7 @@ void exec(const std::string& program_path){
     }
 
     std::string opcode;
-    std::string register1;
+    std::string param1;
     uint16_t third_parameter;
 
     bool ignore = false; //for IFNZ operator
@@ -90,38 +97,39 @@ void exec(const std::string& program_path){
     while(getline(file, line)){
         if(!ignore){
             opcode = parse_opcode(line); //get instruction
-            register1 = parse_operand(line); //parse reg on which operation will be exec on
+            param1 = parse_operand(line); //parse reg on which operation will be exec on
 
             //print
             if(opcode == "PRINT"){
-                std::cout << registers[register1] <<std::endl;
+                std::cout << registers[param1] <<std::endl;
             }
 
             //ignore next instruction if null value in register
             else if(opcode == "IFNZ" ){
-                if (registers[register1] == 0){
+                if (registers[param1] == 0){
                     ignore = true;
                 }
             }
+            
 
             else {
                 third_parameter = parse_value(line,registers);
                 
                 //assignement
                 if(opcode == "SET"){
-                    registers[register1] = saturate_int(third_parameter);
+                    registers[param1] = saturate_int(third_parameter);
                     
                 }
 
                 //addition
                 else if(opcode == "ADD"){
-                    registers[register1] = saturate_int(registers[register1] + third_parameter);
+                    registers[param1] = saturate_int(registers[param1] + third_parameter);
                     
                 }
 
                 //subtraction
                 else if(opcode == "SUB"){
-                    registers[register1] = saturate_int(registers[register1] - third_parameter);
+                    registers[param1] = saturate_int(registers[param1] - third_parameter);
                     
                 }
 
