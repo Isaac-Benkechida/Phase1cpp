@@ -7,10 +7,13 @@
 #include <map> // to easily manipulate registers
 #include <string>
 #include <typeinfo>
-int register_val;
+
+uint16_t stack_pointer = 0;
 
 
 int saturate_int(int value);
 std::string parse_opcode(const std::string& instr);
-uint16_t parse_operand(const std::string& instr);
+std::string parse_operand(const std::string& instr);
 void exec(const std::string& program_path);
+uint16_t read(uint8_t address);
+void write(uint8_t address, uint16_t value);

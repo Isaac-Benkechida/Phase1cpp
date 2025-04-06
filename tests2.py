@@ -51,7 +51,7 @@ ADD a 30
 PRINT a
 SET b 130
 PRINT b
-SUB a b
+SUB a b 
 PRINT a
 """,
 

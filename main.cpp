@@ -3,7 +3,8 @@
 
 //returns the saturated version of the value
 int saturate_int(int value){
-    int saturated = std::min(std::max(value,0),65535); // saturates the int
+    int upper = 65535; 
+    int saturated = std::min(std::max(value,0),upper); // saturates the int
     return saturated; // cast to the right type(avoids warnings and unexpected behaviour)
 }
 
@@ -18,11 +19,10 @@ std::string parse_opcode(const std::string& instr){
 
 
 //extracts the operand that follows an instruction
-uint16_t parse_operand(const std::string& instr){
-    std::string opcode;
-    uint16_t operand;
+std::string parse_operand(const std::string& instr){
+    std::string operand;
     std::stringstream ss(instr);
-    ss >> opcode;
+    ss >> operand;
     ss >> operand;
     
     return operand;
@@ -31,80 +31,97 @@ uint16_t parse_operand(const std::string& instr){
 
 //extracts the operand that follows an instruction
 uint16_t parse_value(const std::string& instr, std::map<std::string,int>& registers){
-    std::string opcode;
-    uint16_t operand;
-    std::string value;
+    std::string third_parameter;
+
+    //parse the line to access the third parameter
     std::stringstream ss(instr);
-    ss >> opcode;
-    ss >> operand;
-    ss >> value;
-    if (registers.find(value) != registers.end()) {
+    ss >> third_parameter;
+    ss >> third_parameter;
+    ss >> third_parameter; //access third parameter of the line
+
+    if (registers.find(third_parameter) != registers.end()) {
         // It's a register name, return its value
-        return registers[value];
+        return registers[third_parameter];
     }
     else{
+        int value;
         //convert it to uint16_t
-        return std::stoi(value);
+        if ((value = std::stoi(third_parameter)) == -1){
+            std::cerr<<"stoi() failed\n";
+            exit(-1);
+        }
+        return value;
     }
 }
 
+
+//initialises a map associating each register name to a value
+std::map<std::string,int> build_map(){
+    std::map<std::string,int> registers;
+    registers["a"] = 0;
+    registers["b"] = 0;
+    registers["c"] = 0;
+    registers["d"] = 0;
+    return registers;
+}
 
 
 
 // Executes le program in the file named 'program_path'
 void exec(const std::string& program_path){
 
-    std::map<std::string,int> registers;
-    registers["a"] = 0;
-    registers["b"] = 0;
-    registers["c"] = 0;
-    registers["d"] = 0;
-    
+    //initialise a map with the 4 registers
+    std::map<std::string,int> registers = build_map();
+
     std::fstream file;
-    file.open(program_path); //open file in reading mode
+    file.open(program_path); //open file
     if(!file){ //if inexistant path or open failed
         std::cerr<<"open() failed\n";
         exit(EXIT_FAILURE);
     }
 
     std::string opcode;
-    uint16_t operand;
-    uint16_t value;
+    std::string register1;
+    uint16_t third_parameter;
 
     bool ignore = false; //for IFNZ operator
     std::string line;
 
     while(getline(file, line)){
-
         if(!ignore){
+            opcode = parse_opcode(line); //get instruction
+            register1 = parse_operand(line); //parse reg on which operation will be exec on
 
-            opcode = parse_opcode(line);
-            operand = parse_operand(line);
             //print
             if(opcode == "PRINT"){
-                std::cout << register_val<<std::endl;
+                std::cout << registers[register1] <<std::endl;
             }
+
             //ignore next instruction if null value in register
-            else if(opcode == "IFNZ" && register_val == 0){
-                ignore = true;
+            else if(opcode == "IFNZ" ){
+                if (registers[register1] == 0){
+                    ignore = true;
+                }
             }
 
             else {
-                value = parse_value(line,registers);
-
+                third_parameter = parse_value(line,registers);
+                
                 //assignement
                 if(opcode == "SET"){
-                    register_val = saturate_int(operand);
+                    registers[register1] = saturate_int(third_parameter);
                     
                 }
+
                 //addition
                 else if(opcode == "ADD"){
-                    register_val = saturate_int(register_val + operand);
+                    registers[register1] = saturate_int(registers[register1] + third_parameter);
                     
                 }
+
                 //subtraction
                 else if(opcode == "SUB"){
-                    register_val = saturate_int(register_val - operand);
+                    registers[register1] = saturate_int(registers[register1] - third_parameter);
                     
                 }
 
@@ -112,10 +129,9 @@ void exec(const std::string& program_path){
             }
             
         }
-        else{
+        else {
             ignore = false; //reset ignore flag
         }
-        
     }
     file.close();
 
