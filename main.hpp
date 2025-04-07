@@ -1,14 +1,11 @@
-#include <iostream>
-#include <cstdint> // uint16_t
-#include <algorithm> // to access min and max methodes (better than using macros -> name conflicts)
-#include <string>
-#include <fstream> //opening files
-#include <sstream> // for string parsing
-#include <map> // to easily manipulate registers
-#include <string>
-#include <typeinfo>
+#include "utils.h"
+#include <variant>
 
-uint16_t stack_pointer = 0;
+
+typedef struct {
+    std::variant<std::string,uint16_t> the_data;
+    bool is_a_value = false;
+}SecondParameter;
 
 
 int saturate_int(int value);

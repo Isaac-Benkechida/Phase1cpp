@@ -46,3 +46,21 @@ uint16_t pop(){
     popped_value = read(stack_pointer);
     return popped_value;
 }
+
+/*------------------------------------------Auxillary Functions------------------------------------------------------*/
+
+//used to write data in memory 
+MsbAndLsb divide_to_encode(uint16_t value){
+    MsbAndLsb pair;
+    pair.lsb = value & 0xFF; //Apply mask (remove msb)
+    pair.msb = value >> B; //remove lsb
+    return pair;
+}
+
+
+//rebuilds the value that was stored in memory
+uint16_t decode_value(uint8_t most_significant_bits,uint8_t least_significant_bits){
+    return (most_significant_bits << B) | least_significant_bits;
+}
+
+

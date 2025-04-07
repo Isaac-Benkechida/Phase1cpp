@@ -1,0 +1,1 @@
+fix Push and POP to handle registers (not only value will be the second param)

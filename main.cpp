@@ -1,5 +1,7 @@
 #include "main.hpp"
 #include "memory.hpp"
+uint8_t memory[1<<B];
+uint16_t stack_pointer = 0;
 
 
 //returns the saturated version of the value
@@ -10,8 +12,8 @@ int saturate_int(int value){
 }
 
 
-bool is_register_name(std::string third_parameter,std::map<std::string,int>& registers){
-    registers.find(third_parameter) != registers.end();
+bool is_register_name(std::string parameter,std::map<std::string,int>& registers){
+    return registers.find(parameter) != registers.end();
 }
 
 
@@ -25,13 +27,18 @@ std::string parse_opcode(const std::string& instr){
 
 
 //extracts the operand that follows an instruction
-std::string parse_operand(const std::string& instr){
+SecondParameter parse_operand(const std::string& instr,std::map<std::string,int>& registers){
+    SecondParameter second_parameter;
     std::string operand;
     std::stringstream ss(instr);
     ss >> operand;
     ss >> operand;
+    second_parameter.the_data = operand;
+    if (!is_register_name(operand,registers)){ //if it is not a register name
+        second_parameter.is_a_value = true;
+    }
     
-    return operand;
+    return second_parameter;
 }
 
 
@@ -88,53 +95,81 @@ void exec(const std::string& program_path){
     }
 
     std::string opcode;
-    std::string param1;
-    uint16_t third_parameter;
 
+    SecondParameter param2;
+    std::string reg1;
+    uint16_t param2_value;
+
+    uint16_t third_parameter;
+    
     bool ignore = false; //for IFNZ operator
     std::string line;
 
     while(getline(file, line)){
         if(!ignore){
             opcode = parse_opcode(line); //get instruction
-            param1 = parse_operand(line); //parse reg on which operation will be exec on
+            param2 = parse_operand(line,registers); //parse reg on which operation will be exec on
 
+            if (param2.is_a_value){
+                param2_value = std::get<uint16_t>(param2.the_data); //working with a value or an address 
+            }
+            else{
+                reg1 = std::get<std::string>(param2.the_data);
+                
+            }
+            
             //print
             if(opcode == "PRINT"){
-                std::cout << registers[param1] <<std::endl;
+                std::cout << registers[reg1] <<std::endl;
             }
 
             //ignore next instruction if null value in register
             else if(opcode == "IFNZ" ){
-                if (registers[param1] == 0){
+                if (registers[reg1] == 0){
                     ignore = true;
                 }
+            }
+            else if(opcode == "PUSH"){
+                push(param2_value);
+            }
+            else if(opcode == "POP"){
+                registers[reg1] = pop();
             }
             
 
             else {
+                param2_value = static_cast<uint8_t>(param2_value); //address
                 third_parameter = parse_value(line,registers);
                 
                 //assignement
                 if(opcode == "SET"){
-                    registers[param1] = saturate_int(third_parameter);
+                    registers[reg1] = saturate_int(third_parameter);
+                    std::cout<<"a set to : "<<registers[reg1]<<std::endl;
                     
                 }
 
                 //addition
                 else if(opcode == "ADD"){
-                    registers[param1] = saturate_int(registers[param1] + third_parameter);
+                    registers[reg1] = saturate_int(registers[reg1] + third_parameter);
                     
                 }
 
                 //subtraction
                 else if(opcode == "SUB"){
-                    registers[param1] = saturate_int(registers[param1] - third_parameter);
+                    registers[reg1] = saturate_int(registers[reg1] - third_parameter);
                     
+                }
+                else if (opcode == "STORE"){
+                    write(param2_value,third_parameter);
+                }
+                else if (opcode == "LOAD"){
+                    registers[reg1] = read(param2_value);
                 }
 
                 
-            }
+            } 
+            
+            
             
         }
         else {

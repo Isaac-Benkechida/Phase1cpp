@@ -1,0 +1,12 @@
+SET a 5
+PUSH a
+ADD a a
+PUSH a
+SUB a 20
+PUSH a
+POP d
+PRINT d
+POP b
+PRINT b
+POP c
+PRINT c
