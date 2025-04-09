@@ -1,12 +1,8 @@
 SET a 5
-PUSH a
-ADD a a
-PUSH a
-SUB a 20
-PUSH a
-POP d
+SET b 8
+STORE 100 a
+STORE 102 b
+LOAD 100 d
 PRINT d
-POP b
-PRINT b
-POP c
+LOAD 102 c
 PRINT c

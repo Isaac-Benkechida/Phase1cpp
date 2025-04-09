@@ -27,8 +27,8 @@ std::string parse_opcode(const std::string& instr){
 
 
 //extracts the operand that follows an instruction
-SecondParameter parse_operand(const std::string& instr,std::map<std::string,int>& registers){
-    SecondParameter second_parameter;
+Parameter parse_operand(const std::string& instr,std::map<std::string,int>& registers){
+    Parameter second_parameter;
     std::string operand;
     std::stringstream ss(instr);
     ss >> operand;
@@ -44,28 +44,20 @@ SecondParameter parse_operand(const std::string& instr,std::map<std::string,int>
 
 
 //extracts the operand that follows an instruction
-uint16_t parse_value(const std::string& instr, std::map<std::string,int>& registers){
-    std::string third_parameter;
+Parameter parse_value(const std::string& instr, std::map<std::string,int>& registers){
+    Parameter third_parameter;
+    std::string parameter;
 
     //parse the line to access the third parameter
     std::stringstream ss(instr);
-    ss >> third_parameter;
-    ss >> third_parameter;
-    ss >> third_parameter; //access third parameter of the line
-
-    if (is_register_name(third_parameter,registers)) {
-        // It's a register name, return its value
-        return registers[third_parameter];
+    ss >> parameter;
+    ss >> parameter;
+    ss >> parameter; //access third parameter of the line
+    third_parameter.the_data;
+    if (!is_register_name(parameter,registers)){ //if it is not a register name
+        third_parameter.is_a_value = true;
     }
-    else{
-        int value;
-        //convert it to uint16_t
-        if ((value = std::stoi(third_parameter)) == -1){
-            std::cerr<<"stoi() failed\n";
-            exit(-1);
-        }
-        return value;
-    }
+    return third_parameter;
 }
 
 
@@ -79,6 +71,10 @@ std::map<std::string,int> build_map(){
     return registers;
 }
 
+
+uint16_t value_in_register(std::string the_register,std::map<std::string,int>& registers){
+    return registers[the_register];
+}
 
 
 // Executes le program in the file named 'program_path'
@@ -96,82 +92,78 @@ void exec(const std::string& program_path){
 
     std::string opcode;
 
-    SecondParameter param2;
+    Parameter second_parameter;
     std::string reg1;
     uint16_t param2_value;
 
-    uint16_t third_parameter;
+    Parameter third_parameter;
+    std::string reg2;
+    uint16_t param3_value;
+
+    uint8_t address;
     
     bool ignore = false; //for IFNZ operator
     std::string line;
 
     while(getline(file, line)){
         if(!ignore){
-            opcode = parse_opcode(line); //get instruction
-            param2 = parse_operand(line,registers); //parse reg on which operation will be exec on
+            opcode = parse_opcode(line);
+            second_parameter = parse_operand(line,registers);
+            if (!second_parameter.is_a_value){//if it's a register name
+                reg1 = std::get<std::string>(second_parameter.the_data);
+                param2_value = registers[reg1];
+                if (opcode == "PRINT"){
+                    std::cout << param2_value<<std::endl;
+                }
+                else if (opcode == "IFNZ"){
+                    if (param2_value == 0){
+                        ignore = true;
+                    }
+                }
+                else if (opcode == "PUSH"){
+                    push(param2_value);
+                }
+                else if (opcode == "POP"){
+                    registers[reg1] = pop();                    
+                }
+                else if(opcode == "SET" || opcode == "ADD" || opcode == "SUB" ){
+                    third_parameter = parse_value(line,registers);
+                    if(!third_parameter.is_a_value){ //if it's a reg name
+                        reg2 = std::get<std::string>(third_parameter.the_data);
+                        param3_value = registers[reg2];  
+                    }
+                    else{
+                        param3_value = std::get<uint16_t>(third_parameter.the_data);
+                    }
 
-            if (param2.is_a_value){
-                param2_value = std::get<uint16_t>(param2.the_data); //working with a value or an address 
-            }
-            else{
-                reg1 = std::get<std::string>(param2.the_data);
-                
-            }
-            
-            //print
-            if(opcode == "PRINT"){
-                std::cout << registers[reg1] <<std::endl;
-            }
-
-            //ignore next instruction if null value in register
-            else if(opcode == "IFNZ" ){
-                if (registers[reg1] == 0){
-                    ignore = true;
+                    if (opcode == "SET"){
+                        registers[reg1] = param3_value;
+                    }
+                    else if (opcode == "ADD"){
+                        registers[reg1] = saturate_int(registers[reg1] + param3_value);
+                    }
+                    else if (opcode == "SUB"){
+                        registers[reg1] = saturate_int(registers[reg1] - param3_value);
+                    }
+                    
                 }
             }
-            else if(opcode == "PUSH"){
-                push(param2_value);
-            }
-            else if(opcode == "POP"){
-                registers[reg1] = pop();
-            }
-            
-
             else {
-                param2_value = static_cast<uint8_t>(param2_value); //address
+                address = std::get<uint8_t>(third_parameter.the_data);
                 third_parameter = parse_value(line,registers);
-                
-                //assignement
-                if(opcode == "SET"){
-                    registers[reg1] = saturate_int(third_parameter);
-                    std::cout<<"a set to : "<<registers[reg1]<<std::endl;
-                    
+                if (!third_parameter.is_a_value){//reg name
+                    reg2 = std::get<std::string>(third_parameter.the_data);
+                    param3_value = registers[reg2];
+                    if (opcode == "STORE"){
+                        write(address,param3_value);
+                    }
+                    else if (opcode == "LOAD"){
+                        registers[reg2] = read(address);
+                    }
                 }
-
-                //addition
-                else if(opcode == "ADD"){
-                    registers[reg1] = saturate_int(registers[reg1] + third_parameter);
-                    
-                }
-
-                //subtraction
-                else if(opcode == "SUB"){
-                    registers[reg1] = saturate_int(registers[reg1] - third_parameter);
-                    
-                }
-                else if (opcode == "STORE"){
-                    write(param2_value,third_parameter);
-                }
-                else if (opcode == "LOAD"){
-                    registers[reg1] = read(param2_value);
-                }
-
-                
-            } 
+            }
             
-            
-            
-        }
+        }             
         else {
             ignore = false; //reset ignore flag
         }
@@ -179,12 +171,6 @@ void exec(const std::string& program_path){
     file.close();
 
 }
-
-
-
-
-
-
 
 int main(int argc, char* argv[]){
     //in case the file path was not provided
