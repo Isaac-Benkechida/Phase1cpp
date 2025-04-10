@@ -5,15 +5,15 @@ uint16_t stack_pointer = 0;
 
 
 //returns the saturated version of the value
-int saturate_int(int value){
+uint16_t saturate_int(int value){
     int upper = 65535; 
     int saturated = std::min(std::max(value,0),upper); // saturates the int
-    return saturated; // cast to the right type(avoids warnings and unexpected behaviour)
+    return static_cast<uint16_t>(saturated); // cast to the right type(avoids warnings and unexpected behaviour)
 }
 
 
-bool is_register_name(std::string parameter,std::map<std::string,int>& registers){
-    return registers.find(parameter) != registers.end();
+bool is_register_name(const std::string& parameter) {
+    return (parameter == "a" ||parameter == "b" ||parameter == "c" ||parameter == "d") ;
 }
 
 
@@ -26,38 +26,39 @@ std::string parse_opcode(const std::string& instr){
 }
 
 
-//extracts the operand that follows an instruction
-Parameter parse_operand(const std::string& instr,std::map<std::string,int>& registers){
-    Parameter second_parameter;
-    std::string operand;
-    std::stringstream ss(instr);
-    ss >> operand;
-    ss >> operand;
-    second_parameter.the_data = operand;
-    if (!is_register_name(operand,registers)){ //if it is not a register name
-        second_parameter.is_a_value = true;
+Parameter parse_into_variant(std::string operand){
+    Parameter the_parameter;
+    the_parameter.the_data = operand;
+    if (is_register_name(operand)){ //if it is a register name
+        the_parameter.the_data.emplace<std::string>(operand); //active type = string
+        the_parameter.is_a_value = false;
     }
-    
-    return second_parameter;
+    else{ //it might be a value
+        try {
+            uint16_t value = std::stoul(operand); // try to convert it to an uint16_t 
+            the_parameter.the_data.emplace<uint16_t>(value); //active type = uint16_t
+            the_parameter.is_a_value = true;
+        }
+        catch(...){ //not a register name, nor a value -> invalid instruction
+            std::cerr<<"Invalid instruction"<<std::endl;
+        }
+    }
+    return the_parameter;
 }
 
 
 
 //extracts the operand that follows an instruction
-Parameter parse_value(const std::string& instr, std::map<std::string,int>& registers){
-    Parameter third_parameter;
+Parameter parse_operand(const std::string& instr,int parameter_position){
     std::string parameter;
 
     //parse the line to access the third parameter
     std::stringstream ss(instr);
-    ss >> parameter;
-    ss >> parameter;
-    ss >> parameter; //access third parameter of the line
-    third_parameter.the_data;
-    if (!is_register_name(parameter,registers)){ //if it is not a register name
-        third_parameter.is_a_value = true;
+    for (int i = 0;i < parameter_position;i++){
+        ss >> parameter;
     }
-    return third_parameter;
+    
+    return parse_into_variant(parameter);
 }
 
 
@@ -71,10 +72,6 @@ std::map<std::string,int> build_map(){
     return registers;
 }
 
-
-uint16_t value_in_register(std::string the_register,std::map<std::string,int>& registers){
-    return registers[the_register];
-}
 
 
 // Executes le program in the file named 'program_path'
@@ -108,10 +105,10 @@ void exec(const std::string& program_path){
     while(getline(file, line)){
         if(!ignore){
             opcode = parse_opcode(line);
-            second_parameter = parse_operand(line,registers);
-            if (!second_parameter.is_a_value){//if it's a register name
-                reg1 = std::get<std::string>(second_parameter.the_data);
-                param2_value = registers[reg1];
+            second_parameter = parse_operand(line,2);
+            if (!second_parameter.is_a_value){ //register name
+                reg1 = std::get<std::string>(second_parameter.the_data); //retrieve reg name from variant
+                param2_value = registers[reg1]; //value in the register
                 if (opcode == "PRINT"){
                     std::cout << param2_value<<std::endl;
                 }
@@ -127,12 +124,12 @@ void exec(const std::string& program_path){
                     registers[reg1] = pop();                    
                 }
                 else if(opcode == "SET" || opcode == "ADD" || opcode == "SUB" ){
-                    third_parameter = parse_value(line,registers);
-                    if(!third_parameter.is_a_value){ //if it's a reg name
+                    third_parameter = parse_operand(line,3);
+                    if(!third_parameter.is_a_value){ //if it's a register name
                         reg2 = std::get<std::string>(third_parameter.the_data);
                         param3_value = registers[reg2];  
                     }
-                    else{
+                    else{ //it's just a value
                         param3_value = std::get<uint16_t>(third_parameter.the_data);
                     }
 
@@ -145,13 +142,13 @@ void exec(const std::string& program_path){
                     else if (opcode == "SUB"){
                         registers[reg1] = saturate_int(registers[reg1] - param3_value);
                     }
-                    
+                        
                 }
             }
             else {
-                address = std::get<uint8_t>(third_parameter.the_data);
-                third_parameter = parse_value(line,registers);
-                if (!third_parameter.is_a_value){//reg name
+                address = std::get<uint16_t>(second_parameter.the_data);
+                third_parameter = parse_operand(line,3);
+                if (!third_parameter.is_a_value){ //reg name
                     reg2 = std::get<std::string>(third_parameter.the_data);
                     param3_value = registers[reg2];
                     if (opcode == "STORE"){
