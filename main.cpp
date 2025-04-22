@@ -63,8 +63,8 @@ Parameter parse_operand(const std::string& instr,int parameter_position){
 
 
 //initialises a map associating each register name to a value
-std::map<std::string,int> build_map(){
-    std::map<std::string,int> registers;
+std::map<std::string,uint16_t> build_map(){
+    std::map<std::string,uint16_t> registers;
     registers["a"] = 0;
     registers["b"] = 0;
     registers["c"] = 0;
@@ -73,30 +73,39 @@ std::map<std::string,int> build_map(){
 }
 
 
+uint16_t set_and_sub(std::map<std::string,uint16_t> registers,std::string opcode,std::string register1,uint16_t param3_value){
+    uint16_t result;
+    if (opcode == "SET"){
+        result = param3_value;
+    }
+    else if (opcode == "ADD"){
+        result = saturate_int(registers[register1] + param3_value);
+    }
+    else if (opcode == "SUB"){
+        result = saturate_int(registers[register1] - param3_value);
+    }
+    return result;
+}
+
 
 // Executes le program in the file named 'program_path'
 void exec(const std::string& program_path){
 
-    //initialise a map with the 4 registers
-    std::map<std::string,int> registers = build_map();
+    //generate a map with the 4 registers
+    std::map<std::string,uint16_t> registers = build_map();
 
     std::fstream file;
     file.open(program_path); //open file
-    if(!file){ //if inexistant path or open failed
+    if(!file){              //if inexistant path or open() failed
         std::cerr<<"open() failed\n";
         exit(EXIT_FAILURE);
     }
 
     std::string opcode;
 
-    Parameter second_parameter;
-    std::string reg1;
-    uint16_t param2_value;
-
-    Parameter third_parameter;
-    std::string reg2;
-    uint16_t param3_value;
-
+    Parameter second_parameter,third_parameter;
+    std::string register1,register2;
+    uint16_t param2_value,param3_value;
     uint8_t address;
     
     bool ignore = false; //for IFNZ operator
@@ -106,60 +115,59 @@ void exec(const std::string& program_path){
         if(!ignore){
             opcode = parse_opcode(line);
             second_parameter = parse_operand(line,2);
-            if (!second_parameter.is_a_value){ //register name
-                reg1 = std::get<std::string>(second_parameter.the_data); //retrieve reg name from variant
-                param2_value = registers[reg1]; //value in the register
+            if (!second_parameter.is_a_value){ //it's a register name
+                register1 = std::get<std::string>(second_parameter.the_data); //retrieve register name from variant
+                param2_value = registers[register1]; //value in the register
+
                 if (opcode == "PRINT"){
                     std::cout << param2_value<<std::endl;
                 }
+
                 else if (opcode == "IFNZ"){
                     if (param2_value == 0){
                         ignore = true;
                     }
                 }
+
                 else if (opcode == "PUSH"){
                     push(param2_value);
                 }
+
                 else if (opcode == "POP"){
-                    registers[reg1] = pop();                    
+                    registers[register1] = pop();                    
                 }
+
                 else if(opcode == "SET" || opcode == "ADD" || opcode == "SUB" ){
                     third_parameter = parse_operand(line,3);
                     if(!third_parameter.is_a_value){ //if it's a register name
-                        reg2 = std::get<std::string>(third_parameter.the_data);
-                        param3_value = registers[reg2];  
+                        register2 = std::get<std::string>(third_parameter.the_data);
+                        param3_value = registers[register2];  
                     }
                     else{ //it's just a value
                         param3_value = std::get<uint16_t>(third_parameter.the_data);
                     }
 
-                    if (opcode == "SET"){
-                        registers[reg1] = param3_value;
-                    }
-                    else if (opcode == "ADD"){
-                        registers[reg1] = saturate_int(registers[reg1] + param3_value);
-                    }
-                    else if (opcode == "SUB"){
-                        registers[reg1] = saturate_int(registers[reg1] - param3_value);
-                    }
+                    registers[register1] = set_and_sub(registers,opcode,register1,param3_value);
                         
                 }
             }
             else {
                 address = std::get<uint16_t>(second_parameter.the_data);
                 third_parameter = parse_operand(line,3);
-                if (!third_parameter.is_a_value){ //reg name
-                    reg2 = std::get<std::string>(third_parameter.the_data);
-                    param3_value = registers[reg2];
+
+                if (!third_parameter.is_a_value){ //register name
+                    register2 = std::get<std::string>(third_parameter.the_data);
+                    param3_value = registers[register2];
+
                     if (opcode == "STORE"){
                         write(address,param3_value);
                     }
+
                     else if (opcode == "LOAD"){
-                        registers[reg2] = read(address);
+                        registers[register2] = read(address);
                     }
                 }
             }
-            
         }             
         else {
             ignore = false; //reset ignore flag

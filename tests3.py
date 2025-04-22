@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 #
-# Fichier de tests pour la phase 2 du projet.
+# Fichier de tests pour la phase 3 du projet.
 #
 # Vous pouvez tester votre projet avec la commande :
 #
-#   python3 tests2.py chemin/vers/votre/executable
+#   python3 tests3.py chemin/vers/votre/executable
 
 import os
 import subprocess
@@ -15,28 +15,33 @@ import sys
 PROGRAM_FILE = "program.txt"
 
 PROGRAMS = [
-"""SET a 5
-ADD a 6
+"""SETv a 5
+ADDv a 6
 PRINT a
-SUB a 4
+SUBv a 4
 IFNZ a
 PRINT a
-SUB a 10
-IFNZ a
-PRINT a
-""",
-
-"""SET a 0
-IFNZ a
-PRINT a
-SET a 5
+SUBv a 10
 IFNZ a
 PRINT a
 """,
 
-"""SET c 50000
+"""IFNZ a
+PRINT a
+SETv a 5
+IFNZ a
+PRINT a
+""",
+
+"""SETv a 50
+SETr b a
+PRINT b
 PRINT c
-ADD c 50000
+""",
+
+"""SETv c 50000
+PRINT c
+ADDv c 50000
 PRINT c
 """,
 
@@ -46,20 +51,20 @@ PRINT c
 PRINT d
 """,
 
-"""SET a 120
-ADD a 30
+"""SETv a 120
+ADDv a 30
 PRINT a
-SET b 130
+SETv b 130
 PRINT b
-SUB a b 
+SUBr a b
 PRINT a
 """,
 
-"""SET a 5
+"""SETv a 5
 PUSH a
-ADD a a
+ADDr a a
 PUSH a
-SUB a 20
+SUBv a 20
 PUSH a
 POP d
 PRINT d
@@ -69,8 +74,8 @@ POP c
 PRINT c
 """,
 
-"""SET a 5
-SET b 8
+"""SETv a 5
+SETv b 8
 STORE 100 a
 STORE 102 b
 LOAD 100 d
@@ -79,10 +84,10 @@ LOAD 102 c
 PRINT c
 """,
 
-"""SET a 150
-SET b 130
+"""SETv a 150
+SETv b 130
 PUSH a
-ADD a b
+ADDr a b
 PUSH a
 STORE 100 a
 STORE 101 b
@@ -95,7 +100,7 @@ IFNZ b
 PRINT b
 LOAD 101 a
 PRINT a
-SUB b b
+SUBr b b
 IFNZ b
 PRINT b
 """,
@@ -108,6 +113,10 @@ OUTPUTS = [
   ],
   [
     ["5"],
+  ],
+  [
+    ["50"],
+    ["0"],
   ],
   [
     ["50000"],
