@@ -1,9 +1,6 @@
-#include "utils.h"
+#include "../header/utils.h"
 #include <variant>
 
-
-
-std::map<std::string,uint16_t> build_map();
 
 /*------------------------------------Parse Related Functions and Structures----------------------------------------------------*/
 /*used to store the parsed element of the instruction*/

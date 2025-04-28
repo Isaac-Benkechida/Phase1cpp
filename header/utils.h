@@ -6,5 +6,6 @@
 #include <sstream> // for string parsing
 #include <map> // to easily manipulate registers
 #include <string>
+#include <vector>
 
-uint16_t saturate_int(int value);
+constexpr uint16_t saturate_int(int value);

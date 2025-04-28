@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "../header/utils.h"
 
 #define B 8 //size of address in bits
 #define DATA_SIZE 2 //bytes that an element occupies
