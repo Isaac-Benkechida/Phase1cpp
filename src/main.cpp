@@ -48,7 +48,7 @@ void exec(const std::string& program_path){
 
     bool ignore = false; //for IFNZ operator
     std::string line;
-    unsigned int reg_ind[2];
+    int reg_ind[2];
     uint16_t values[2];
     uint8_t address;
     uint16_t value_in_reg;
@@ -62,6 +62,7 @@ void exec(const std::string& program_path){
                 if (!instruction.operands[i]) continue;
                 if(instruction.operands[i]->type == OperandType::REGISTER){
                     reg_ind[i] = extract_register_index(instruction.operands[i]->parsed);
+                    std::cout<<"reg_ind[i]: "<<reg_ind[i];
                 } 
                 else{
                     values[i] = instruction.operands[i]->parsed;

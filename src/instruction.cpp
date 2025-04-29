@@ -41,6 +41,29 @@ Opcode determine_opcode(const std::string& instr){
 }
 
 
-void parse_operand(const std::string& instr,unsigned int parameter_position,Opcode opcode,const Operand* operands[2]){
+void parse_operand(const std::string& instr,Operand* operand, int parameter_position,Opcode opcode){
+    uint16_t op;
+    std::stringstream ss(instr);
+    for (int i = 0;i < parameter_position;i++ ){
+        ss >> op;
+    }
+    operand->parsed = op;
+    if (parameter_position == 2){ // if it's the first operand
+        if(opcode == Opcode::LOAD or opcode == Opcode::STORE){ //They are address (always a value)
+            operand->type = OperandType::NUMERIC;
+        }
+        else{
+            operand->type = OperandType::REGISTER;
+        }
+    }
+    else if(parameter_position == 3){
+        if (opcode == Opcode::SETv or opcode == Opcode::SUBv or opcode == Opcode::ADDv){
+            operand->type = OperandType::NUMERIC;
+        }
+        else{
+            operand->type = OperandType::REGISTER;
+        }
+        
+    }
     
 }

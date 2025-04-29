@@ -7,5 +7,6 @@
 #include <map> // to easily manipulate registers
 #include <string>
 #include <vector>
+#include <memory>
 
 constexpr uint16_t saturate_int(int value);
