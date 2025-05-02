@@ -9,8 +9,8 @@ EXE     := $(BINDIR)$(NAME)
 SFILES  := cpp
 OFILES  := o
 CC      := g++
-CFLAGS  := -Wall -Wextra -O3 -std=gnu++20 -pedantic -march=native -Wnull-dereference -Wconversion -pthread -flto -pipe -g -fsanitize=address,undefined
-LIBS    := -fsanitize=address,undefined
+CFLAGS  := -Wall -Wextra -O0 -std=gnu++20 -pedantic -march=native -Wnull-dereference -Wconversion -pthread -flto -pipe -g -fsanitize=address,undefined
+LDFLAGS := -fsanitize=address,undefined
 
 SOURCES := $(shell find $(SRCDIR) -name "*.$(SFILES)")
 OBJECTS := $(patsubst $(SRCDIR)%.$(SFILES), $(OBJDIR)%.$(OFILES), $(SOURCES))
@@ -24,14 +24,14 @@ directories:
 	@mkdir -p $(OBJDIR)
 
 $(EXE): $(OBJECTS)
-	$(CC) $^ -o $@ $(LIBS)
+	$(CC) $^ -o $@ $(LDFLAGS)  # Use LDFLAGS for linking
 
 $(OBJDIR)%.$(OFILES): $(SRCDIR)%.$(SFILES)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@  # Use CFLAGS for compiling
 
 test:
-	python3 tests3.py $(EXE)
+	python3 tests3.py $(TOPDIR)$(EXE)
 
 clean:
 	@rm -f $(EXE)

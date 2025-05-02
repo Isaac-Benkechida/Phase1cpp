@@ -49,7 +49,7 @@ void push(uint16_t value){
 uint16_t pop(){
     uint16_t popped_value;
     stack_pointer -= 2; //retrieve the latest value stored
-    uint8_t address = static_cast<uint8_t>(stack_pointer); //explicitly convert to an uint8_t address
+    uint8_t address = static_cast<uint8_t>(stack_pointer); //explicitely convert to an uint8_t address
     popped_value = read(address);
     return popped_value;
 }

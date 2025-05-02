@@ -1,9 +1,5 @@
 SETv a 5
-ADDv a 6
 PRINT a
-SUBv a 4
-IFNZ a
-PRINT a
-SUBv a 10
-IFNZ a
-PRINT a
+STORE 5 a 
+LOAD 5 b
+PRINT b

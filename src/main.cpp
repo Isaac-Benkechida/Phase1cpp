@@ -20,18 +20,6 @@ bool is_register_name(const std::string& parameter) {
 }
 
 
-unsigned int extract_register_index(uint16_t parsed){
-    unsigned int index = 0;
-    for (int i = 97; i <= 100; i++){ // 97 = "a" in ASCII
-        if(parsed == i){
-            return index;
-        }
-        index++;
-    }
-    return -1; // doesn't correspond to any register
-}
-
-
 // Executes le program in the file named 'program_path'
 void exec(const std::string& program_path){
 
@@ -41,90 +29,91 @@ void exec(const std::string& program_path){
 
     std::fstream file;
     file.open(program_path); //open file
-    if(!file){              //if inexistant path or open() failed
+    if(!file){ //if inexistant path or open() failed
         std::cerr<<"open() failed\n";
         exit(EXIT_FAILURE);
     }
 
     bool ignore = false; //for IFNZ operator
     std::string line;
-    int reg_ind[2];
-    uint16_t values[2];
-    uint8_t address;
-    uint16_t value_in_reg;
+    int operation_result;
+    uint8_t address; //for LOAD and STORE instruction
+    uint16_t val1,val2;
 
 
     while(getline(file, line)){
         if(!ignore){
-            Instruction instruction(line); // build the instruction structure
 
-            for (int i = 0; i < 2;i++){ // get the index of the used registers
-                if (!instruction.operands[i]) continue;
-                if(instruction.operands[i]->type == OperandType::REGISTER){
-                    reg_ind[i] = extract_register_index(instruction.operands[i]->parsed);
-                    std::cout<<"reg_ind[i]: "<<reg_ind[i];
-                } 
-                else{
-                    values[i] = instruction.operands[i]->parsed;
-                }  
+            Instruction instruction(line); // build the instruction structure
+            Opcode opcode = instruction.opcode;
+
+            if(opcode == Opcode::LOAD or opcode == Opcode::STORE){ //first operand is an address 
+                address = static_cast<uint8_t>(instruction.operands[0]->parsed); //no implicit conversions (avoid warnings)
+                val2 = instruction.operands[1]->parsed ;
+
+            } else if(opcode == Opcode::PRINT or opcode == Opcode::IFNZ or opcode == Opcode::POP or opcode == Opcode::PUSH){
+                val1 =  instruction.operands[0]->parsed;
+
+            } else{
+                val1 =  instruction.operands[0]->parsed;
+                val2 = instruction.operands[1]->parsed ;
             }
 
-            switch(instruction.opcode){
-
-                case Opcode::IFNZ:
-                    ignore = true;
-                    break;
-
-                case Opcode::PRINT:
-                    value_in_reg = static_cast<uint16_t>(registers[reg_ind[0]]);// get the val of the register
-                    std::cout << value_in_reg << std::endl;
-                    break;
-
-
+            switch (opcode){
                 case Opcode::SETv:
-                    registers[reg_ind[0]] = values[1];
+                    registers[val1] = val2;
+                    break;
+                case Opcode::SETr:
+                    registers[val1] = registers[val2];
+                    break;
+                case Opcode::SUBv:
+                    operation_result = registers[val1] - val2 ;
+                    registers[val1] = saturate_int(operation_result);
+                    break;
+                case Opcode::SUBr:
+                    operation_result = registers[val1] - registers[val2];
+                    registers[val1] = saturate_int(operation_result);
                     break;
 
                 case Opcode::ADDv:
-                    registers[reg_ind[0]] = saturate_int(registers[reg_ind[0]] + values[1]);
+                    operation_result = registers[val1] + val2;
+                    registers[val1] = saturate_int(operation_result);
                     break;
 
-                case Opcode::SUBv:
-                    registers[reg_ind[0]] = saturate_int(registers[reg_ind[0]] - values[1]);
-                    break;
-
-
-                case Opcode::SETr:
-                    registers[reg_ind[0]] = registers[reg_ind[1]];
-                    break;
                 case Opcode::ADDr:
-                    registers[reg_ind[0]] = saturate_int(registers[reg_ind[0]] + registers[reg_ind[1]]);
+                    operation_result = registers[val1] + registers[val2];
+                    registers[val1] = saturate_int(operation_result);
                     break;
 
-                case Opcode::SUBr:
-                    registers[reg_ind[0]] = saturate_int(registers[reg_ind[0]] - registers[reg_ind[1]]);
+                case Opcode::PRINT:
+                    std::cout<< registers[val1 ] <<std::endl;
                     break;
 
+                case Opcode::IFNZ:
+                    if(registers[val1] == 0){
+                       ignore = true; 
+                    }
+                    
+                    break;
 
                 case Opcode::POP:
-                    registers[reg_ind[0]] = pop();
+                    registers[val1] = pop();
+                    
                     break;
-                
+
                 case Opcode::PUSH:
-                    push(registers[reg_ind[0]]);
+                    push(registers[val1]);
+                    break;
+
+                case Opcode::LOAD:
+                    registers[val2] = read(address);
                     break;
 
                 case Opcode::STORE:
-                    address = static_cast<uint8_t>(values[0]);
-                    write(address,registers[reg_ind[1]]);
-                    break;
-                
-                case Opcode::LOAD:
-                    address = static_cast<uint8_t>(values[0]);
-                    read(address);
+                    write(address,registers[val2]);
                     break;
 
-            }
+                }  
 
         }
         else {
@@ -132,6 +121,7 @@ void exec(const std::string& program_path){
         }
     }
     file.close();
+
 
 }
 

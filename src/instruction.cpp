@@ -36,34 +36,73 @@ Opcode determine_opcode(const std::string& instr){
         opcode = Opcode::PRINT;
     } else if(the_opcode == "IFNZ"){
         opcode = Opcode::IFNZ;
+    } else if(the_opcode == "STORE"){
+        opcode = Opcode::STORE; 
     }
     return opcode;
 }
 
 
-void parse_operand(const std::string& instr,Operand* operand, int parameter_position,Opcode opcode){
-    uint16_t op;
-    std::stringstream ss(instr);
-    for (int i = 0;i < parameter_position;i++ ){
-        ss >> op;
+uint16_t extract_register_index(int parsed){
+    uint16_t index;
+    for (int i = 97; i <= 100; i++){ // 97 = "a" in ASCII
+        if(parsed == i){
+            index = static_cast<uint16_t>(i-97);
+            return index;
+        }
     }
-    operand->parsed = op;
+    std::cerr<< "doesn't correspond to any register name"<<std::endl;
+    exit(EXIT_FAILURE); // doesn't correspond to any register
+}
+
+
+
+void parse_operand(const std::string& instr,Operand* operand, int parameter_position,Opcode opcode){
+    std::string op;
+    int num_op;
+    std::stringstream ss(instr);
+
     if (parameter_position == 2){ // if it's the first operand
-        if(opcode == Opcode::LOAD or opcode == Opcode::STORE){ //They are address (always a value)
+        if(opcode == Opcode::LOAD or opcode == Opcode::STORE){ //They are addresses (always a value)
             operand->type = OperandType::NUMERIC;
+            for (int i = 0;i < parameter_position;i++ ){
+                ss >> op;
+            }
+
+            num_op = std::stoi(op);  
+            operand->parsed = static_cast<uint16_t>(num_op);
+
         }
         else{
             operand->type = OperandType::REGISTER;
+
+            for (int i = 0;i < parameter_position;i++ ){
+                ss >> op;
+            }
+            num_op =  static_cast<int>(op[0]);//transform the string to an int
+            operand->parsed = extract_register_index(num_op);
         }
     }
     else if(parameter_position == 3){
-        if (opcode == Opcode::SETv or opcode == Opcode::SUBv or opcode == Opcode::ADDv){
+        if (opcode == Opcode::SETv or opcode == Opcode::SUBv or opcode == Opcode::ADDv){ // value (not register)
+            for (int i = 0;i < parameter_position;i++ ){
+                ss >> op;
+            }
+            num_op = std::stoi(op);  
+            operand->parsed = static_cast<uint16_t>(num_op);
             operand->type = OperandType::NUMERIC;
         }
         else{
+            for (int i = 0;i < parameter_position;i++ ){
+                ss >> op;
+            }
             operand->type = OperandType::REGISTER;
+            num_op =  static_cast<int>(op[0]);//transform the string to an int
+            operand->parsed = extract_register_index(num_op);
         }
         
     }
+    
+
     
 }
