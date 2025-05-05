@@ -23,9 +23,10 @@ bool is_register_name(const std::string& parameter) {
 // Executes le program in the file named 'program_path'
 void exec(const std::string& program_path){
 
-    //generate 4 registers
+    //generate 4 registers and memory
     Register a,b,c,d;
     Register registers[4] = {a, b, c, d};
+    Memory mem_space(8);
 
     std::fstream file;
     file.open(program_path); //open file
@@ -86,7 +87,7 @@ void exec(const std::string& program_path){
                     break;
 
                 case Opcode::PRINT:
-                    std::cout<< registers[val1 ] <<std::endl;
+                    std::cout<< registers[val1] <<std::endl;
                     break;
 
                 case Opcode::IFNZ:
@@ -97,20 +98,19 @@ void exec(const std::string& program_path){
                     break;
 
                 case Opcode::POP:
-                    registers[val1] = pop();
-                    
+                    registers[val1] = mem_space.pop();                    
                     break;
 
                 case Opcode::PUSH:
-                    push(registers[val1]);
+                    mem_space.push(registers[val1]);
                     break;
 
                 case Opcode::LOAD:
-                    registers[val2] = read(address);
+                    registers[val2] = mem_space[address];
                     break;
 
                 case Opcode::STORE:
-                    write(address,registers[val2]);
+                    mem_space[address] = registers[val2];
                     break;
 
                 }  

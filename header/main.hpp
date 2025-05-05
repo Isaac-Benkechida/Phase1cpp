@@ -11,8 +11,7 @@ typedef struct {
 
 bool is_register_name(const std::string& parameter); //checks if the parameter is a register name
 std::string parse_opcode(const std::string& instr);
-Parameter parse_operand(const std::string& instr);
-Parameter parse_into_variant(std::string operand);
+
 
 /*-------------------------------------Register/memory manipulation Functions-------------------------------------------*/
 uint16_t set_and_sub(std::map<std::string,uint16_t> registers,std::string opcode,std::string register1,uint16_t param3_value);
